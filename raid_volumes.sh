@@ -212,7 +212,7 @@ install_apt_deps() {
 # the initramfs with the copy of the new mdadm.conf file. This ensure that after
 # a host reboot, the volume will still mount properly.
 create_volume() {
-  dry_exec "yes | mdadm --create --verbose ${MD_VOL} --level=${RAID_LEVEL} --name=raid-setup-${VERSION} --raid-devices=${PARTITION_COUNT} ${AVAILABLE_PARTITIONS}"
+  dry_exec "yes | mdadm --create --force --verbose ${MD_VOL} --level=${RAID_LEVEL} --name=raid-setup-${VERSION} --raid-devices=${PARTITION_COUNT} ${AVAILABLE_PARTITIONS}"
   dry_exec "echo DEVICE partitions > ${MD_CONF}"
   dry_exec "mdadm --detail --scan >> ${MD_CONF}"
   dry_exec "update-initramfs -u"
@@ -221,6 +221,8 @@ create_volume() {
 # Creates the filesystem on the mdadm device, mounts it, and adds it to the
 # fstab file for automatic mounts in the future.
 make_filesystem() {
+
+  # http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ssd-instance-store.html
   if test "${FS}" = "xfs"; then
     mkfs_opts="-K -f"
   elif test "${FS}" = "ext4"; then
