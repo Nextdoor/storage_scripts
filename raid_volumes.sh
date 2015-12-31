@@ -28,7 +28,7 @@ RAID_LEVEL=${RAID_LEVEL:-0}
 FS=${FS:-ext4}
 MDADM_CONF_LOCATIONS="/etc/mdadm/mdadm.conf /etc/mdadm.conf"
 MOUNT_POINT=${MOUNT_POINT:-/mnt}
-MOUNT_OPTS=${MOUNT_OPTS:-defaults,noatime,nodiratime,nobootwait}
+MOUNT_OPTS=${MOUNT_OPTS:-defaults,noatime,nodiratime,nobootwait,discard}
 VERBOSE=${VERBOSE:-0}
 
 # Apt-package dependencies
@@ -222,13 +222,13 @@ create_volume() {
 # fstab file for automatic mounts in the future.
 make_filesystem() {
   if test "${FS}" = "xfs"; then
-    mkfs_cmd="mkfs.${FS} -f"
-  else
-    mkfs_cmd="mkfs.${FS}"
+    mkfs_opts="-K -f"
+  elif test "${FS}" = "ext4"; then
+    mkfs_opts="-E nodiscard"
   fi
   mnt_line="${MD_VOL} ${MOUNT_POINT} ${FS} ${MOUNT_OPTS}"
 
-  dry_exec "${mkfs_cmd} ${MD_VOL}"
+  dry_exec "mkfs.${FS} ${mkfs_opts} ${MD_VOL}"
   dry_exec "mount ${MD_VOL} ${MOUNT_POINT} -o ${MOUNT_OPTS}"
   dry_exec "echo ${mnt_line} >> /etc/fstab"
 }
