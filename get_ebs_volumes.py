@@ -237,10 +237,3 @@ else:
 vols = get_ebs_volumes(DEFAULT_EBS_DISK_NAMES, int(options.volcount), int(options.volsize), options.ebstype)
 with open('/tmp/ebs_vols', 'a') as f:
     f.write(','.join(vols))
-
-
-# Now that we have our volumes, and our mountpoint, lets create our raid volume
-if raid_vol == False:
-    print "ERROR: create_raid_volume(%s, %s) failed. exiting script." % \
-        (str(vols), str(options.raidlevel))
-    sys.exit(1)
