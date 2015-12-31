@@ -237,10 +237,10 @@ make_filesystem() {
 main() {
   info "Raid Setup Script: v${VERSION}"
 
+  install_apt_deps
   discover_md_vol
   discover_md_conf
   discover_partitions
-  install_apt_deps
   create_volume
   make_filesystem
 }
