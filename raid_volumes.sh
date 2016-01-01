@@ -28,7 +28,7 @@ RAID_LEVEL=${RAID_LEVEL:-0}
 FS=${FS:-ext4}
 MDADM_CONF_LOCATIONS="/etc/mdadm/mdadm.conf /etc/mdadm.conf"
 MOUNT_POINT=${MOUNT_POINT:-/mnt}
-MOUNT_OPTS=${MOUNT_OPTS:-defaults,noatime,nodiratime,nobootwait,discard}
+MOUNT_OPTS=${MOUNT_OPTS:-defaults,noatime,nodiratime,nobootwait}
 VERBOSE=${VERBOSE:-0}
 
 # Apt-package dependencies
