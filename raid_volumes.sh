@@ -128,7 +128,9 @@ dry_exec() {
 discover_partitions() {
   debug "Discovered partitions: ${PARTITIONS}"
   for part in $(echo $PARTITIONS | sed "s/,/ /g"); do
-    part="/dev/${part}"
+    # Strip out /dev/ if the user supplied it, and then we add it back in
+    # ourselves. If they did not supply it, we just add it.
+    part="/dev/$(echo $part | sed 's/\/dev\///g')"
     fail=0
 
     debug "Checking if ${part} is a block device"
