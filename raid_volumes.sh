@@ -26,6 +26,7 @@ DRY=${DRY:-0}
 INSTALL_DEPS=${INSTALL_DEPS:-1}
 RAID_LEVEL=${RAID_LEVEL:-0}
 FS=${FS:-ext4}
+BLOCK_SIZE=${BLOCK_SIZE:-512}
 MDADM_CONF_LOCATIONS="/etc/mdadm/mdadm.conf /etc/mdadm.conf"
 MOUNT_POINT=${MOUNT_POINT:-/mnt}
 MOUNT_OPTS=${MOUNT_OPTS:-defaults,noatime,nodiratime,nobootwait}
@@ -48,6 +49,7 @@ Usage: $0 <options>
 
 Options:
   -h  Show Help
+  -c  Set the MDADM Chunk/Block Sie (default: BLOCK_SIZE=${BLOCK_SIZE})
   -d  Dry Run -- no real changes are made (default: DRY=${DRY})
   -D  Install system dependencies automatically? (default: INSTALL_DEPS=${INSTALL_DEPS})
   -l  The RAID Level (default: RAID_LEVEL=${RAID_LEVEL})
@@ -68,8 +70,11 @@ END
 }
 
 # Parse our options passed in by the user
-while getopts "h?dDl:f:o:m:v" opt; do
+while getopts "h?c:dDl:f:o:m:v" opt; do
   case "$opt" in
+  c)
+    BLOCK_SIZE=$OPTARG
+    ;;
   d)
     DRY=1
     ;;
@@ -214,7 +219,7 @@ install_apt_deps() {
 # the initramfs with the copy of the new mdadm.conf file. This ensure that after
 # a host reboot, the volume will still mount properly.
 create_volume() {
-  dry_exec "yes | mdadm --create --force --verbose ${MD_VOL} --level=${RAID_LEVEL} --name=raid-setup-${VERSION} --raid-devices=${PARTITION_COUNT} ${AVAILABLE_PARTITIONS}"
+  dry_exec "yes | mdadm --create --force --verbose ${MD_VOL} --chunk=${BLOCK_SIZE} --level=${RAID_LEVEL} --name=raid-setup-${VERSION} --raid-devices=${PARTITION_COUNT} ${AVAILABLE_PARTITIONS}"
   dry_exec "echo DEVICE partitions > ${MD_CONF}"
   dry_exec "mdadm --detail --scan >> ${MD_CONF}"
   dry_exec "update-initramfs -u"
