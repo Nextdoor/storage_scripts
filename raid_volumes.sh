@@ -222,6 +222,11 @@ create_volume() {
   dry_exec "yes | mdadm --create --force --verbose ${MD_VOL} --chunk=${BLOCK_SIZE} --level=${RAID_LEVEL} --name=raid-setup-${VERSION} --raid-devices=${PARTITION_COUNT} ${AVAILABLE_PARTITIONS}"
   dry_exec "echo DEVICE partitions > ${MD_CONF}"
   dry_exec "mdadm --detail --scan >> ${MD_CONF}"
+
+  # https://bruun.co/2012/06/06/software-raid-on-ec2-with-mdadm
+  dry_exec "echo BOOT_DEGRADED=true > /etc/initramfs-tools/conf.d/mdadm.conf"
+
+  # Regenerate the initramfs with the above settings
   dry_exec "update-initramfs -u"
 }
 
