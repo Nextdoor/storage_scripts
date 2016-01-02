@@ -22,14 +22,14 @@ VERSION=0.0.1
 OPTIND=1  # Reset in case getopts has been used previously in the shell.
 
 # Defaults -- overrideable by setting them outside of this script
-DRY=${DRY:-0}
-INSTALL_DEPS=${INSTALL_DEPS:-1}
-RAID_LEVEL=${RAID_LEVEL:-0}
-FS=${FS:-ext4}
 BLOCK_SIZE=${BLOCK_SIZE:-512}
+DRY=${DRY:-0}
+FS=${FS:-ext4}
+INSTALL_DEPS=${INSTALL_DEPS:-1}
 MDADM_CONF_LOCATIONS="/etc/mdadm/mdadm.conf /etc/mdadm.conf"
 MOUNT_POINT=${MOUNT_POINT:-/mnt}
 MOUNT_OPTS=${MOUNT_OPTS:-defaults,noatime,nodiratime,nobootwait}
+RAID_LEVEL=${RAID_LEVEL:-0}
 VERBOSE=${VERBOSE:-0}
 
 # Apt-package dependencies
@@ -250,6 +250,17 @@ make_filesystem() {
 # Our main startup function
 main() {
   info "Raid Setup Script: v${VERSION}"
+  info "Parameters:"
+  info "----------"
+  info "BLOCK_SIZE   = ${BLOCK_SIZE}"
+  info "DRY          = ${DRY}"
+  info "FS           = ${FS}"
+  info "INSTALL_DEPS = ${INSTALL_DEPS}"
+  info "MOUNT_POINT  = ${MOUNT_POINT}"
+  info "MOUNT_OPTS   = ${MOUNT_OPTS}"
+  info "RAID_LEVEL   = ${RAID_LEVEL}"
+  info "VERBOSE      = ${VERBOSE}"
+  info "----------"
 
   install_apt_deps
   discover_md_vol
