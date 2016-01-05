@@ -31,6 +31,7 @@ MOUNT_POINT=${MOUNT_POINT:-/mnt}
 MOUNT_OPTS=${MOUNT_OPTS:-defaults,noatime,nodiratime,nobootwait}
 RAID_LEVEL=${RAID_LEVEL:-0}
 VERBOSE=${VERBOSE:-0}
+NO_PARTITIONS_EXIT_CODE=${NO_PARTITIONS_EXIT_CODE:-1}
 
 # Apt-package dependencies
 APT_DEPS="mdadm xfsprogs"
@@ -67,6 +68,16 @@ Environmental Options:
   You can override all of the above settings by setting environment variables
   instead of passing in commandline options. The variable names are listed
   above next to the defaults.
+
+  Additionally, there are the following variables available that do not have
+  CLI options:
+
+  NO_PARTITIONS_EXIT_CODE (def: ${NO_PARTITIONS_EXIT_CODE})
+    Exit code when no available partitions are found to RAID.
+
+  EXCLUDED_PARTITIONS (def: ${EXCLUDED_PARTITIONS})
+    List of partitions that are explicitly excluded from the RAID volume.
+    Exit code when no available partitions are found to RAID.
 
 END
   exit 0
@@ -174,7 +185,7 @@ discover_partitions() {
   # this script already and properly built their array.
   if ! test "$AVAILABLE_PARTITIONS"; then
     warn "No available partitions found -- exiting."
-    exit 0
+    exit $NO_PARTITIONS_EXIT_CODE
   fi
 
   PARTITION_COUNT=$(echo "${AVAILABLE_PARTITIONS}" | wc -w)
