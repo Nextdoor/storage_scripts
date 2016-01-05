@@ -31,13 +31,16 @@ MOUNT_POINT=${MOUNT_POINT:-/mnt}
 MOUNT_OPTS=${MOUNT_OPTS:-defaults,noatime,nodiratime,nobootwait}
 RAID_LEVEL=${RAID_LEVEL:-0}
 VERBOSE=${VERBOSE:-0}
+NO_PARTITIONS_EXIT_CODE=${NO_PARTITIONS_EXIT_CODE:-1}
 
 # Apt-package dependencies
 APT_DEPS="mdadm xfsprogs"
 
 # Discover all available partitions -- but allow the user to override the list
 # as well.
+FORCE=${FORCE:-0}
 DISCOVERED_PARTITIONS=$(cat /proc/partitions | tail -n +3 | grep -v 'md' | awk '{print $4}' | tr '\n' ',')
+EXCLUDED_PARTITIONS=${EXCLUDED_PARTITIONS:-"/dev/xvda /dev/xvda1 /dev/sda /dev/sda1"}
 PARTITIONS=${PARTITIONS:-$DISCOVERED_PARTITIONS}
 
 # Shows the user how to use the tool
@@ -54,6 +57,7 @@ Options:
   -D  Install system dependencies automatically? (default: INSTALL_DEPS=${INSTALL_DEPS})
   -l  The RAID Level (default: RAID_LEVEL=${RAID_LEVEL})
   -f  Filesystem type (default: FS=${FS})
+  -F  Force overwriting of existing partitions (default: FORCE=${FORCE})
   -o  The mount options (default: MOUNT_OPTS=${MOUNT_OPTS})
   -m  The mount point (default: MOUNT_POINT=${MOUNT_POINT})
   -p  A comma-separated list of the partitions to operate on.
@@ -64,6 +68,16 @@ Environmental Options:
   You can override all of the above settings by setting environment variables
   instead of passing in commandline options. The variable names are listed
   above next to the defaults.
+
+  Additionally, there are the following variables available that do not have
+  CLI options:
+
+  NO_PARTITIONS_EXIT_CODE (def: ${NO_PARTITIONS_EXIT_CODE})
+    Exit code when no available partitions are found to RAID.
+
+  EXCLUDED_PARTITIONS (def: ${EXCLUDED_PARTITIONS})
+    List of partitions that are explicitly excluded from the RAID volume.
+    Exit code when no available partitions are found to RAID.
 
 END
   exit 0
@@ -86,6 +100,9 @@ while getopts "h?c:dDl:f:o:m:v" opt; do
     ;;
   f)
     FS=$OPTARG
+    ;;
+  F)
+    FORCE=$1
     ;;
   l)
     RAID_LEVEL=$OPTARG
@@ -144,10 +161,18 @@ discover_partitions() {
       debug "${part} is not a block device!"
     fi
 
-    debug "Checking if ${part} has any existing partition tables"
-    if blkid -po udev $part > /dev/null 2>&1; then
+    debug "Checking if ${part} is in EXCLUDED_PARTITIONS: ${EXCLUDED_PARTITIONS}"
+    if test "$(echo $EXCLUDED_PARTITIONS | grep $part)"; then
       fail=1
-      debug "${part} already has a partition table, skipping!"
+      debug="${part} is listed in the excluded partitions."
+    fi
+
+    if ! test "$FORCE"; then
+      debug "Checking if ${part} has any existing partition tables"
+      if blkid -po udev $part > /dev/null 2>&1; then
+        fail=1
+        debug "${part} already has a partition table, skipping!"
+      fi
     fi
    
     if test $fail -eq 0; then
@@ -160,7 +185,7 @@ discover_partitions() {
   # this script already and properly built their array.
   if ! test "$AVAILABLE_PARTITIONS"; then
     warn "No available partitions found -- exiting."
-    exit 0
+    exit $NO_PARTITIONS_EXIT_CODE
   fi
 
   PARTITION_COUNT=$(echo "${AVAILABLE_PARTITIONS}" | wc -w)
@@ -252,14 +277,16 @@ main() {
   info "Raid Setup Script: v${VERSION}"
   info "Parameters:"
   info "----------"
-  info "BLOCK_SIZE   = ${BLOCK_SIZE}"
-  info "DRY          = ${DRY}"
-  info "FS           = ${FS}"
-  info "INSTALL_DEPS = ${INSTALL_DEPS}"
-  info "MOUNT_POINT  = ${MOUNT_POINT}"
-  info "MOUNT_OPTS   = ${MOUNT_OPTS}"
-  info "RAID_LEVEL   = ${RAID_LEVEL}"
-  info "VERBOSE      = ${VERBOSE}"
+  info "BLOCK_SIZE          = ${BLOCK_SIZE}"
+  info "DRY                 = ${DRY}"
+  info "EXCLUDED_PARTITIONS = ${EXCLUDED_PARTITIONS}"
+  info "FS                  = ${FS}"
+  info "FORCE               = ${FORCE}"
+  info "INSTALL_DEPS        = ${INSTALL_DEPS}"
+  info "MOUNT_POINT         = ${MOUNT_POINT}"
+  info "MOUNT_OPTS          = ${MOUNT_OPTS}"
+  info "RAID_LEVEL          = ${RAID_LEVEL}"
+  info "VERBOSE             = ${VERBOSE}"
   info "----------"
 
   install_apt_deps
