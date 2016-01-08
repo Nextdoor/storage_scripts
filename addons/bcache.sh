@@ -10,9 +10,9 @@
 rc=0
 start() {
   if [ ! -e /sys/block/bcache0/bcache/cache ]; then
-    /sbin/wipefs -a $EPHEMERAL_PARTITIONS
-    /usr/sbin/make-bcache -C $EPHEMERAL_PARTITIONS
-    for DEV in $EPHEMERAL_PARTITIONS; do
+    /sbin/wipefs -a $CACHE_DEVICE
+    /usr/sbin/make-bcache -C $CACHE_DEVICE
+    for DEV in $CACHE_DEVICE; do
       echo $DEV > /sys/fs/bcache/register
     done
     sleep 1
