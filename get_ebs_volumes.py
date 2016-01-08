@@ -149,7 +149,7 @@ else:
 # EBS volumes are created upon demand, mounted and raided. They will
 # be labeled appropriately so that they are easily trackable.
 vols = get_ebs_volumes(DEFAULT_EBS_DISK_NAMES, int(options.volcount), int(options.volsize), options.ebstype)
-vols_string = ','.join(vols)
+vols_string = ' '.join(vols)
 print "INFO: Generated EBS Vols: %s" % vols_string
 with open('/tmp/ebs_vols', 'w') as f:
     f.write(vols_string)
