@@ -170,9 +170,6 @@ discover_partitions() {
     warn "No available partitions found -- exiting."
     exit $NO_PARTITIONS_EXIT_CODE
   fi
-
-  PARTITION_COUNT=$(echo "${AVAILABLE_PARTITIONS}" | wc -w)
-  info "Available partitions ($PARTITION_COUNT): ${AVAILABLE_PARTITIONS}"
 }
 
 # Discover a list of our ephemeral -- instance store -- drives.
@@ -242,12 +239,14 @@ discover_md_conf() {
 #   on to the next drive in the array.
 #   RAID_LEVEL: The RAID level to use -- 0, 1, etc.
 #   VERSION: The version of this script -- used in naming the array.
-#   PARTITION_COUNT: The total number of volumes being added to the array
 #   AVAILABLE_PARTITIONS: The actual device list to add to the array.
 #
 # Sets:
 #   VOL: The volume it just created (aka $MD_VOL)
 create_md_volume() {
+  PARTITION_COUNT=$(echo "${AVAILABLE_PARTITIONS}" | wc -w)
+  info "Available partitions ($PARTITION_COUNT): ${AVAILABLE_PARTITIONS}"
+
   dry_exec "yes | mdadm --create --force --verbose ${MD_VOL} --chunk=${BLOCK_SIZE} --level=${RAID_LEVEL} --name=raid-setup-${VERSION} --raid-devices=${PARTITION_COUNT} ${AVAILABLE_PARTITIONS}"
   dry_exec "echo DEVICE partitions > ${MD_CONF}"
   dry_exec "mdadm --detail --scan >> ${MD_CONF}"
@@ -286,8 +285,8 @@ maybe_wipe() {
 # Expects:
 #   ENABLE_BCACHE: Whether or not to actually enable the bcache
 #   BCACHE_MODE: writethrough/writeback/none
-#   EPHEMERAL_PARTITIONS: A list of local ephemeral drives
-#   MD_VOL: The /dev/mdX device
+#   CACHE_DEVICE: A list of local ephemeral drives
+#   BACKING_DEVICE: The /dev/mdX device
 #
 # Sets:
 #   VOL: The new volume created
@@ -299,13 +298,13 @@ create_bcache_vol() {
   fi
 
   # Wipe out the devices and configure them properly
-  maybe_wipe $EPHEMERAL_PARTITIONS
-  dry_exec "make-bcache -B $MD_VOL -C ${EPHEMERAL_PARTITIONS}"
+  maybe_wipe $CACHE_DEVICE
+  dry_exec "make-bcache -B $BACKING_DEVICE -C ${CACHE_DEVICE}"
 
   # Wait for the bcache device to show up in the OS...
   dry_exec "sleep 1"
 
-  dry_exec "cat addons/bcache.sh | EPHEMERAL_PARTITIONS=\"${EPHEMERAL_PARTITIONS}\" BCACHE_MODE=\"${BCACHE_MODE}\" envsubst > /etc/init.d/bcache"
+  dry_exec "cat addons/bcache.sh | CACHE_DEVICE=\"${CACHE_DEVICE}\" BCACHE_MODE=\"${BCACHE_MODE}\" envsubst > /etc/init.d/bcache"
   dry_exec "chmod +x /etc/init.d/bcache"
   dry_exec "update-rc.d bcache defaults"
   dry_exec "/etc/init.d/bcache tune"

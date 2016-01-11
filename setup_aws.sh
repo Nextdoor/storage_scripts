@@ -132,6 +132,27 @@ create_md_volume
 # formatting /dev/md0.
 case $STORAGE_TYPE in
   ebs)
+    # Store a reference to our backing volume. This will be used by
+    # create_bcache_vol()
+    BACKING_DEVICE=$MD_VOL
+    info "Setting up bcache0 with ${BACKING_DEVICE} as the backing device"
+
+    # Get a new MD_VOL that will be used for the cache volume. This will
+    # be used by create_md_volume()
+    info "Discovering the next available MD volume for the caching device"
+    discover_md_vol
+
+    # Now pass in our EPHEMERAL_PARTITIONS to create_md_vol and create a mdadm
+    # volume that will be used as our caching device with all of the local
+    # ephemeral storage devices.
+    info "Configuring ${MD_VOL} as a caching device for bcache0"
+    RAID_LEVEL=0 AVAILABLE_PARTITIONS=${EPHEMERAL_PARTITIONS} create_md_volume
+
+    # Finally, get our CACHE_DEVICE reference that was created 2 lines above
+    # and then create our bcache device
+    CACHE_DEVICE=$MD_VOL
+
+    # Now create the bcache0 device and format it
     create_bcache_vol
     make_filesystem
     ;;
