@@ -77,6 +77,8 @@ install_apt_deps() {
   if ! test "$missing"; then return; fi
 
   # Install the Apt dependencies now
+  export DEBIAN_FRONTEND="noninteractive"
+  export DEBCONF_NONINTERACTIVE="true"
   apt-get -qq update || warn "apt-get update failed ... attempting package install anyways"
   dry_exec apt-get -qq install $missing
 }
